@@ -1,0 +1,3 @@
+source:ssh AND (type:sshd OR type:auth) NOT message:"failed password"
+http_response_code:[400 TO 499] AND source_ip:192.168.1.0/24
+_exists_:user_id AND level:error

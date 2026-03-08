@@ -1,0 +1,7 @@
+rule "tag ssh errors"
+when
+  has_field("source") AND to_string($message.source) == "sshd"
+then
+  let severity = to_long($message.level);
+  set_field("tag", "ssh-error");
+end

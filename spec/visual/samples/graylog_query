@@ -1,0 +1,40 @@
+ssh
+source:ssh
+source:ssh AND type:sshd
+type:sshd OR type:auth
+NOT message:error
+source:ssh AND (type:sshd OR type:auth)
+NOT _exists_:user_id
+_missing_:session_id
+_exists_:source AND _missing_:user
+message:"failed password"
+message:"failed password for invalid user"
+http_response_code:[400 TO 499]
+http_response_code:{400 TO 499}
+timestamp:["2019-07-23 09:53:08.175" TO "2019-07-23 09:53:08.575"]
+level:>3
+level:>=4
+level:<5
+level:<=10
+source_ip:192.168.1.100
+source_ip:10.0.0.0/24
+hostname:web-server-01
+path:/var/log/syslog
+term~
+term~1
+"phrase search"~5
+title:Roam~0.8
+source:ssh*
+source:?ssh
+message:err*
+user:adm?n
+source:/[a-z]+server/
+AND OR NOT TO
+http_response_code:[200 TO 200]
+count:42
+ratio:3.14
+bytes:1048576
+latency:0.5
+field_name:(value1 OR value2 OR value3)
+source:ssh AND level:error AND NOT message:"connection closed"
+(source:web OR source:app) AND http_method:POST AND NOT status:200

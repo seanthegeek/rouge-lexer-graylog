@@ -1,0 +1,184 @@
+// Simple rule example
+rule "tag ssh login failures"
+when
+  has_field("source") AND to_string($message.source) == "sshd"
+then
+  let severity = to_long($message.level);
+  set_field("tag", "ssh-failure");
+  set_field("processed", true);
+end
+
+// Rule with type conversion and conditions
+rule "enrich http logs"
+when
+  has_field("http_response_code") AND
+  to_long($message.http_response_code) >= 400
+then
+  let code = to_long($message.http_response_code);
+  let msg = to_string($message.message);
+  set_field("is_error", true);
+  set_field("error_code", code);
+  rename_field("http_response_code", "status_code");
+end
+
+// Rule using CIDR match for IP filtering
+rule "tag private network traffic"
+when
+  has_field("source_ip") AND
+  cidr_match("10.0.0.0/8", to_ip($message.source_ip))
+then
+  set_field("network_type", "private");
+  set_field("internal", true);
+end
+
+// Rule using grok pattern matching
+rule "parse nginx access log"
+when
+  has_field("message") AND
+  grok_exists(pattern: "%{COMBINEDAPACHELOG}", value: to_string($message.message))
+then
+  let parsed = grok(pattern: "%{COMBINEDAPACHELOG}", value: to_string($message.message));
+  set_fields(parsed);
+end
+
+// Rule with regex matching
+rule "extract request id"
+when
+  has_field("message") AND
+  regex("request_id=[a-f0-9-]+", to_string($message.message))
+then
+  let matched = regex_replace(".*request_id=([a-f0-9-]+).*", to_string($message.message), "$1");
+  set_field("request_id", matched);
+end
+
+// Rule demonstrating string functions
+rule "normalize source field"
+when
+  has_field("source")
+then
+  let src = lowercase(to_string($message.source));
+  let trimmed = substring(src, 0, 64);
+  set_field("source_normalized", trimmed);
+  set_field("source_upper", uppercase(to_string($message.source)));
+end
+
+// Rule with lookup table
+rule "lookup user info"
+when
+  has_field("user_id")
+then
+  let user_name = lookup_value(lookup_table: "users", key: to_string($message.user_id));
+  set_field("user_name", user_name);
+end
+
+// Rule demonstrating date/time functions
+rule "add timestamp fields"
+when
+  true
+then
+  let current = now();
+  let formatted = format_date(value: current, format: "yyyy-MM-dd HH:mm:ss");
+  set_field("processed_at", formatted);
+  set_field("processed_epoch", millis(value: current));
+end
+
+// Rule with hash functions
+rule "hash sensitive field"
+when
+  has_field("password")
+then
+  let hashed = sha256(to_string($message.password));
+  set_field("password_hash", hashed);
+  remove_field("password");
+end
+
+// Rule using base64 encoding
+rule "encode payload"
+when
+  has_field("payload")
+then
+  let encoded = base64_encode(to_string($message.payload));
+  set_field("payload_b64", encoded);
+end
+
+// Rule with boolean logic
+rule "complex condition"
+when
+  (has_field("source") OR has_field("host")) AND
+  NOT has_field("processed") AND
+  is_not_null($message.level)
+then
+  let lvl = to_long($message.level);
+  let src = to_string($message.source);
+  set_field("normalized_level", lvl);
+  set_field("normalized_source", src);
+  set_field("processed", true);
+end
+
+// Rule demonstrating null/boolean constants
+rule "handle null fields"
+when
+  is_null($message.user_id) OR is_null($message.session_id)
+then
+  set_field("has_identity", false);
+  set_field("requires_review", true);
+  set_field("null_value_example", null);
+end
+
+// Rule with numeric literals and float
+rule "check rate threshold"
+when
+  has_field("rate") AND to_double($message.rate) > 99.5
+then
+  let rate = to_double($message.rate);
+  set_field("high_rate", true);
+  set_field("rate_normalized", rate);
+  metric_counter_inc(name: "high_rate_count", value: 1);
+end
+
+// Rule using drop and route
+rule "drop debug messages"
+when
+  has_field("level") AND to_string($message.level) == "DEBUG"
+then
+  drop_message();
+end
+
+rule "route errors to error stream"
+when
+  has_field("level") AND to_string($message.level) == "ERROR"
+then
+  route_to_stream(name: "Error Stream");
+end
+
+// Rule with array and list operations
+rule "check array field"
+when
+  has_field("tags") AND array_contains($message.tags, "security")
+then
+  set_field("is_security_event", true);
+  let count = list_count(value: $message.tags);
+  set_field("tag_count", count);
+end
+
+// Rule with map operations
+rule "extract from json"
+when
+  has_field("json_payload") AND is_json(to_string($message.json_payload))
+then
+  let parsed = parse_json(to_string($message.json_payload));
+  let user = map_get(map: parsed, key: "user");
+  set_field("extracted_user", user);
+end
+
+// Pipeline structure (for reference)
+pipeline "Web Access Log Pipeline"
+  stage 0 match either
+    rule "parse nginx access log";
+    rule "parse apache access log";
+  end
+  stage 1 match all
+    rule "enrich http logs";
+    rule "tag private network traffic";
+  end
+end
