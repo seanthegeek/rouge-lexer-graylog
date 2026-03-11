@@ -112,6 +112,7 @@ then
   set_field("tag", "ssh-error");
 end
 ```
+
 ### Colors
 
 The lexer tells Rouge how to identify tokens. Rouge wraps each token in a `span` tag
