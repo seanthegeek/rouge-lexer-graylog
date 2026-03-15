@@ -99,7 +99,7 @@ end
 
 Then run `bundle install`. Reference the lexer by tag in fenced code blocks:
 
-````markdown
+~~markdown
 ```graylog-query
 source:ssh AND level:error AND NOT _exists_:user_id
 ```
@@ -112,7 +112,7 @@ then
   set_field("tag", "ssh-error");
 end
 ```
-````
+~~~
 
 ### Colors
 
