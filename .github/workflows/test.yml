@@ -33,7 +33,7 @@ jobs:
           cache-version: rouge-${{ matrix.rouge }}
 
       - name: Show Rouge version
-        run: bundle exec ruby -e 'require "rouge"; puts "Rouge #{Rouge.version}"'
+        run: bundle exec ruby -e 'require "rouge"; puts Rouge.version'
 
       - name: Run tests
         run: bundle exec rake
